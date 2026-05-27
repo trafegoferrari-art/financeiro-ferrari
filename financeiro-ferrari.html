@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financeiro Ferrari</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #1a1a1a;
+    --bg3: #242424;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f0;
+    --text2: #999;
+    --text3: #666;
+    --green: #1D9E75;
+    --green-bg: #0d2e1f;
+    --green-text: #4ecca8;
+    --red: #E24B4A;
+    --red-bg: #2e0d0d;
+    --red-text: #f08080;
+    --blue: #378ADD;
+    --blue-bg: #0d1e2e;
+    --blue-text: #7ab8f5;
+    --amber: #EF9F27;
+    --amber-bg: #2e1e0d;
+    --amber-text: #f5c97a;
+    --purple: #7F77DD;
+    --purple-bg: #1a1830;
+    --purple-text: #b0abf0;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  .app-shell { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar { width: 220px; background: var(--bg2); border-right: 1px solid var(--border); padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 4px; position: fixed; top: 0; left: 0; height: 100vh; }
+  .sidebar-logo { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px; }
+  .sidebar-logo span { color: var(--blue); }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 14px; color: var(--text2); transition: all .15s; border: none; background: transparent; width: 100%; text-align: left; }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: var(--blue-bg); color: var(--blue-text); }
+  .nav-item i { font-size: 18px; }
+  .sidebar-bottom { margin-top: auto; }
+  .sidebar-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; background: var(--green-bg); color: var(--green-text); display: inline-block; margin-top: 8px; }
+
+  /* Main content */
+  .main { margin-left: 220px; padding: 2rem; flex: 1; max-width: calc(100vw - 220px); }
+  .page-title { font-size: 22px; font-weight: 700; margin-bottom: 1.5rem; }
+  .section { display: none; }
+  .section.visible { display: block; }
+
+  /* Metrics */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .mc { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+  .mc-label { font-size: 12px; color: var(--text3); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .mc-val { font-size: 22px; font-weight: 700; }
+  .mc-val.green { color: var(--green-text); }
+  .mc-val.red { color: var(--red-text); }
+  .mc-val.blue { color: var(--blue-text); }
+  .mc-val.amber { color: var(--amber-text); }
+
+  /* Cards */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1rem; }
+  .card-title { font-size: 15px; font-weight: 600; margin-bottom: 1.25rem; }
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+
+  /* Forms */
+  .fg { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .fg label { font-size: 12px; color: var(--text2); }
+  .fg input, .fg select, .fg textarea {
+    background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm);
+    color: var(--text); padding: 9px 12px; font-size: 14px; font-family: inherit; width: 100%;
+    transition: border .15s;
+  }
+  .fg input:focus, .fg select:focus, .fg textarea:focus { outline: none; border-color: var(--blue); }
+  .fg textarea { resize: vertical; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  /* Buttons */
+  .btn-p { background: var(--blue); color: #fff; border: none; padding: 9px 22px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-p:hover { opacity: .85; }
+  .btn-s { background: transparent; color: var(--text2); border: 1px solid var(--border2); padding: 9px 18px; border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-s:hover { background: var(--bg3); color: var(--text); }
+  .btn-danger { background: var(--red-bg); color: var(--red-text); border: 1px solid rgba(226,75,74,0.3); padding: 9px 18px; border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; }
+
+  /* Tipo toggle */
+  .tipo-toggle { display: flex; gap: 8px; margin-bottom: 1.25rem; }
+  .tipo-btn { padding: 8px 20px; border-radius: 20px; border: 1px solid var(--border2); background: transparent; cursor: pointer; font-size: 13px; color: var(--text2); transition: all .15s; display: inline-flex; align-items: center; gap: 6px; }
+  .tipo-btn.receita.active { background: var(--green-bg); color: var(--green-text); border-color: rgba(29,158,117,.4); }
+  .tipo-btn.gasto.active { background: var(--red-bg); color: var(--red-text); border-color: rgba(226,75,74,.4); }
+
+  /* Upload */
+  .upload-area { border: 2px dashed var(--border2); border-radius: var(--radius); padding: 3rem 2rem; text-align: center; cursor: pointer; transition: all .2s; }
+  .upload-area:hover { border-color: var(--blue); background: var(--blue-bg); }
+  .upload-icon { font-size: 40px; color: var(--text3); margin-bottom: 10px; }
+  .upload-text { font-size: 15px; color: var(--text2); }
+  .upload-sub { font-size: 12px; color: var(--text3); margin-top: 6px; }
+
+  /* AI result */
+  .ai-result { background: var(--bg3); border-radius: var(--radius); padding: 1.25rem; margin-top: 1rem; border-left: 3px solid var(--blue); }
+  .ai-title { font-size: 13px; font-weight: 600; color: var(--blue-text); margin-bottom: 1rem; display: flex; align-items: center; gap: 6px; }
+  .ai-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .ai-item:last-child { border-bottom: none; }
+  .ai-cat { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; font-size: 11px; color: var(--text2); }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text3); border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: .5px; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: var(--bg3); }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .b-receita { background: var(--green-bg); color: var(--green-text); }
+  .b-pessoal { background: var(--purple-bg); color: var(--purple-text); }
+  .b-ferramenta { background: var(--blue-bg); color: var(--blue-text); }
+  .b-cartao { background: var(--amber-bg); color: var(--amber-text); }
+  .b-outro { background: var(--bg3); color: var(--text2); }
+
+  /* Misc */
+  .del-btn { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 16px; padding: 3px 8px; border-radius: 4px; }
+  .del-btn:hover { color: var(--red-text); background: var(--red-bg); }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--border2); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-row { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text2); padding: 1rem 0; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; font-size: 12px; color: var(--text2); }
+  .ldot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 4px; vertical-align: middle; }
+  .empty { text-align: center; padding: 3rem; color: var(--text3); font-size: 14px; }
+  .status-ok { background: var(--green-bg); color: var(--green-text); border: 1px solid rgba(29,158,117,.3); font-size: 12px; padding: 5px 12px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; gap: 5px; }
+  .status-err { background: var(--red-bg); color: var(--red-text); border: 1px solid rgba(226,75,74,.3); font-size: 12px; padding: 5px 12px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; gap: 5px; }
+  .sync-tag { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: var(--blue-bg); color: var(--blue-text); display: inline-flex; align-items: center; gap: 5px; }
+  .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .filter-bar select { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 6px 10px; border-radius: var(--radius-sm); font-size: 13px; }
+  .month-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .month-pill { padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); background: transparent; cursor: pointer; font-size: 12px; color: var(--text2); transition: all .15s; }
+  .month-pill:hover { background: var(--bg3); color: var(--text); }
+  .month-pill.active { background: var(--blue-bg); color: var(--blue-text); border-color: rgba(55,138,221,.4); }
+  .id-box { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; font-family: monospace; color: var(--text); word-break: break-all; margin: 8px 0; }
+  .help-text { font-size: 12px; color: var(--text3); margin-top: 4px; }
+
+  @media (max-width: 768px) {
+    .sidebar { width: 60px; padding: .75rem .5rem; }
+    .sidebar-logo, .nav-item span, .sidebar-badge { display: none; }
+    .main { margin-left: 60px; padding: 1rem; max-width: calc(100vw - 60px); }
+    .charts-row { grid-template-columns: 1fr; }
+    .row2, .row3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo"><i class="ti ti-chart-pie"></i> <span>Ferrari</span></div>
+    <button class="nav-item active" onclick="showSec('dashboard')"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></button>
+    <button class="nav-item" onclick="showSec('lancamento')"><i class="ti ti-plus"></i><span>Lançar</span></button>
+    <button class="nav-item" onclick="showSec('upload')"><i class="ti ti-file-invoice"></i><span>Fatura IA</span></button>
+    <button class="nav-item" onclick="showSec('planilha')"><i class="ti ti-table"></i><span>Planilha</span></button>
+    <button class="nav-item" onclick="showSec('config')"><i class="ti ti-settings"></i><span>Config</span></button>
+    <div class="sidebar-bottom">
+      <div id="conn-status"></div>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div id="sec-dashboard" class="section visible">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
+        <h1 class="page-title" style="margin:0">Dashboard</h1>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="sync-tag"></span>
+          <button class="btn-s" onclick="syncFromSheets()"><i class="ti ti-refresh"></i> Sincronizar</button>
+        </div>
+      </div>
+      <div class="month-bar" id="month-pills"></div>
+      <div class="metrics" id="metrics"></div>
+      <div class="charts-row">
+        <div class="card">
+          <div class="card-title">Gastos por subcategoria</div>
+          <div class="legend-row" id="leg-pizza"></div>
+          <div style="position:relative;height:220px"><canvas id="ch-pizza" role="img" aria-label="Gastos por subcategoria"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Receita vs Gastos — mensal</div>
+          <div class="legend-row">
+            <span><span class="ldot" style="background:#1D9E75"></span>Receita</span>
+            <span><span class="ldot" style="background:#E24B4A"></span>Gastos</span>
+          </div>
+          <div style="position:relative;height:220px"><canvas id="ch-bar" role="img" aria-label="Receita versus gastos mensais"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LANÇAMENTO -->
+    <div id="sec-lancamento" class="section">
+      <h1 class="page-title">Novo lançamento</h1>
+      <div class="card">
+        <div class="tipo-toggle">
+          <button class="tipo-btn receita active" id="btn-rec" onclick="setTipo('receita')"><i class="ti ti-arrow-up"></i> Receita</button>
+          <button class="tipo-btn gasto" id="btn-gas" onclick="setTipo('gasto')"><i class="ti ti-arrow-down"></i> Gasto</button>
+        </div>
+        <div class="row2">
+          <div class="fg"><label>Descrição</label><input type="text" id="f-desc" placeholder="ex: Cliente Le Folie — gestão Mai"></div>
+          <div class="fg"><label>Valor (R$)</label><input type="number" id="f-valor" placeholder="0.00" step="0.01" min="0"></div>
+        </div>
+        <div class="row3">
+          <div class="fg">
+            <label>Categoria</label>
+            <select id="f-cat" onchange="updateSubcat()">
+              <option value="receita">Receita de cliente (PJ)</option>
+              <option value="pessoal">Gasto pessoal</option>
+              <option value="ferramenta">Ferramentas/negócio</option>
+              <option value="cartao">Cartão de crédito</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="fg"><label>Subcategoria</label><select id="f-subcat"></select></div>
+          <div class="fg">
+            <label>Mês</label>
+            <select id="f-mes">
+              <option>Jan</option><option>Fev</option><option>Mar</option><option>Abr</option>
+              <option selected>Mai</option><option>Jun</option><option>Jul</option>
+              <option>Ago</option><option>Set</option><option>Out</option><option>Nov</option><option>Dez</option>
+            </select>
+          </div>
+        </div>
+        <div class="fg"><label>Observação (opcional)</label><input type="text" id="f-obs" placeholder="Detalhes adicionais..."></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+          <button class="btn-p" onclick="addLancamento()"><i class="ti ti-check"></i> Salvar lançamento</button>
+          <span id="save-status"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FATURA IA -->
+    <div id="sec-upload" class="section">
+      <h1 class="page-title">Fatura IA</h1>
+      <div class="card">
+        <p style="font-size:13px;color:var(--text2);margin-bottom:1.25rem">Faça upload de uma foto ou PDF da sua fatura. A IA vai extrair e classificar os lançamentos automaticamente.</p>
+        <div class="upload-area" onclick="document.getElementById('file-input').click()">
+          <div class="upload-icon"><i class="ti ti-cloud-upload"></i></div>
+          <div class="upload-text">Clique para selecionar ou arraste aqui</div>
+          <div class="upload-sub">JPG · PNG · PDF — fatura de cartão, extrato bancário</div>
+          <input type="file" id="file-input" accept="image/*,application/pdf" style="display:none" onchange="processFile(event)">
+        </div>
+        <div id="upload-status"></div>
+      </div>
+    </div>
+
+    <!-- PLANILHA -->
+    <div id="sec-planilha" class="section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
+        <h1 class="page-title" style="margin:0">Planilha</h1>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="fil-cat" onchange="renderPlanilha()" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:6px 10px;border-radius:var(--radius-sm);font-size:13px">
+            <option value="">Todas as categorias</option>
+            <option value="receita">Receitas PJ</option>
+            <option value="pessoal">Pessoal</option>
+            <option value="ferramenta">Ferramentas</option>
+            <option value="cartao">Cartão</option>
+          </select>
+          <select id="fil-mes-plan" onchange="renderPlanilha()" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:6px 10px;border-radius:var(--radius-sm);font-size:13px">
+            <option value="">Todos os meses</option>
+            <option>Jan</option><option>Fev</option><option>Mar</option><option>Abr</option>
+            <option>Mai</option><option>Jun</option><option>Jul</option>
+            <option>Ago</option><option>Set</option><option>Out</option><option>Nov</option><option>Dez</option>
+          </select>
+          <button class="btn-s" onclick="syncFromSheets()"><i class="ti ti-refresh"></i> Sincronizar</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Mês</th><th>Descrição</th><th>Categoria</th><th>Subcategoria</th><th>Tipo</th><th>Valor</th><th></th></tr></thead>
+            <tbody id="tb"></tbody>
+          </table>
+          <div id="tb-empty" class="empty" style="display:none"><i class="ti ti-inbox" style="font-size:32px;display:block;margin-bottom:8px"></i>Nenhum lançamento ainda.<br>Comece pela aba Lançar!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div id="sec-config" class="section">
+      <h1 class="page-title">Configurações</h1>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-brand-google"></i> Google Sheets</div>
+        <div class="fg">
+          <label>ID da Planilha</label>
+          <input type="text" id="cfg-sheetid" placeholder="Cole o ID da planilha aqui">
+          <span class="help-text">URL: docs.google.com/spreadsheets/d/<strong style="color:var(--blue-text)">ID</strong>/edit</span>
+        </div>
+        <div class="fg" style="margin-top:4px">
+          <label>Credenciais JSON (Service Account)</label>
+          <textarea id="cfg-json" rows="8" placeholder='Cole aqui o conteúdo completo do arquivo .json baixado do Google Cloud Console'></textarea>
+          <span class="help-text">🔒 Salvo apenas no seu navegador (localStorage). Nunca sai do seu computador.</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn-p" onclick="saveConfig()"><i class="ti ti-device-floppy"></i> Salvar</button>
+          <button class="btn-s" onclick="testConnection()"><i class="ti ti-plug"></i> Testar conexão</button>
+          <button class="btn-danger" onclick="clearData()"><i class="ti ti-trash"></i> Limpar dados locais</button>
+          <span id="cfg-status"></span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">ID da sua planilha</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:8px">Sua planilha <strong>Financeiro Ferrari</strong> foi criada com este ID:</p>
+        <div class="id-box">100qeO9m8UbcPxxDJUMqmg4z1ibsqmVXQtsDob1BStuY</div>
+        <button class="btn-s" style="font-size:12px;padding:5px 14px;margin-top:4px" onclick="copyId()"><i class="ti ti-copy"></i> Copiar ID</button>
+        <div style="margin-top:12px">
+          <a href="https://docs.google.com/spreadsheets/d/100qeO9m8UbcPxxDJUMqmg4z1ibsqmVXQtsDob1BStuY/edit" target="_blank" style="color:var(--blue-text);font-size:13px;text-decoration:none"><i class="ti ti-external-link"></i> Abrir planilha no Google Sheets</a>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const SHEET_ID_DEFAULT = '100qeO9m8UbcPxxDJUMqmg4z1ibsqmVXQtsDob1BStuY';
+const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const SUBCATS = {
+  receita: ['Cliente mensal','Projeto pontual','Bônus/comissão','Outro'],
+  pessoal: ['Supermercado','Restaurante/alimentação','Delivery de comida','Gasolina/transporte','Farmácia/saúde','Moradia/aluguel','Vestuário','Lazer/entretenimento','Outro pessoal'],
+  ferramenta: ['Meta Ads (crédito)','Canva Pro','n8n/automação','ManyChat','Domínio/hospedagem','Software/SaaS','Outro negócio'],
+  cartao: ['Fatura Nubank','Fatura Itaú','Fatura C6','Outro cartão'],
+  outro: ['Investimento','Imposto/taxa','Transferência','Outro']
+};
+const CAT_LABEL = {receita:'Receita PJ',pessoal:'Pessoal',ferramenta:'Ferramentas',cartao:'Cartão',outro:'Outro'};
+const CAT_BADGE = {receita:'b-receita',pessoal:'b-pessoal',ferramenta:'b-ferramenta',cartao:'b-cartao',outro:'b-outro'};
+const SUBCAT_COLORS = {
+  'Supermercado':'#7F77DD','Restaurante/alimentação':'#AFA9EC','Delivery de comida':'#534AB7',
+  'Gasolina/transporte':'#EF9F27','Farmácia/saúde':'#1D9E75','Moradia/aluguel':'#378ADD',
+  'Vestuário':'#D4537E','Lazer/entretenimento':'#E24B4A','Meta Ads (crédito)':'#185FA5',
+  'Canva Pro':'#0F6E56','n8n/automação':'#3B6D11','ManyChat':'#639922',
+  'Domínio/hospedagem':'#BA7517','Software/SaaS':'#993C1D','Fatura Nubank':'#D85A30',
+  'Fatura Itaú':'#884499','Fatura C6':'#338899'
+};
+
+let lancamentos = [], nextId = 1, tipoAtual = 'receita', mesSel = 'Mai';
+let pizzaChart = null, barChart = null;
+let cfg = {sheetId: SHEET_ID_DEFAULT, creds: null};
+
+function loadConfig() {
+  try {
+    const s = localStorage.getItem('ff_cfg');
+    if(s) cfg = {...cfg, ...JSON.parse(s)};
+    if(!cfg.sheetId) cfg.sheetId = SHEET_ID_DEFAULT;
+  } catch(e) {}
+  try {
+    const l = localStorage.getItem('ff_lancamentos');
+    if(l) { lancamentos = JSON.parse(l); nextId = lancamentos.length ? Math.max(...lancamentos.map(l=>l.id))+1 : 1; }
+  } catch(e) {}
+  document.getElementById('cfg-sheetid').value = cfg.sheetId;
+  if(cfg.creds) document.getElementById('cfg-json').value = JSON.stringify(cfg.creds,null,2);
+  updateConnStatus();
+}
+
+function updateConnStatus() {
+  const el = document.getElementById('conn-status');
+  if(cfg.creds) el.innerHTML='<span class="sidebar-badge"><i class="ti ti-check" style="font-size:10px"></i> Sheets ativo</span>';
+  else el.innerHTML='<span class="sidebar-badge" style="background:#2e1e0d;color:#f5c97a">Config pendente</span>';
+}
+
+function saveConfig() {
+  const sid = document.getElementById('cfg-sheetid').value.trim();
+  const raw = document.getElementById('cfg-json').value.trim();
+  let creds;
+  try { creds = JSON.parse(raw); } catch(e) { showCfgStatus('JSON inválido — verifique o arquivo','err'); return; }
+  if(!creds.client_email||!creds.private_key) { showCfgStatus('JSON incompleto','err'); return; }
+  cfg = {sheetId: sid||SHEET_ID_DEFAULT, creds};
+  localStorage.setItem('ff_cfg', JSON.stringify(cfg));
+  showCfgStatus('Salvo com sucesso!','ok');
+  updateConnStatus();
+}
+
+function clearData() {
+  if(!confirm('Apagar todos os lançamentos locais? (a planilha do Sheets não será afetada)')) return;
+  lancamentos = []; nextId = 1;
+  localStorage.removeItem('ff_lancamentos');
+  renderAll(); renderPlanilha();
+}
+
+function showCfgStatus(msg, type) {
+  const el = document.getElementById('cfg-status');
+  el.className = type==='ok'?'status-ok':'status-err';
+  el.innerHTML = (type==='ok'?'<i class="ti ti-check"></i>':'<i class="ti ti-x"></i>')+' '+msg;
+  setTimeout(()=>{ el.innerHTML=''; el.className=''; }, 4000);
+}
+
+async function testConnection() {
+  if(!cfg.creds) { showCfgStatus('Configure as credenciais primeiro','err'); return; }
+  showCfgStatus('Testando...','ok');
+  try { const t = await getAccessToken(); showCfgStatus(t?'Conexão OK!':'Falha',t?'ok':'err'); }
+  catch(e) { showCfgStatus('Erro: '+e.message,'err'); }
+}
+
+function copyId() {
+  navigator.clipboard.writeText(SHEET_ID_DEFAULT);
+  event.target.closest('button').innerHTML='<i class="ti ti-check"></i> Copiado!';
+  setTimeout(()=>event.target.closest('button').innerHTML='<i class="ti ti-copy"></i> Copiar ID',2000);
+}
+
+async function getAccessToken() {
+  if(!cfg.creds) throw new Error('Sem credenciais');
+  const now = Math.floor(Date.now()/1000);
+  const b64u = s => btoa(s).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const header = b64u(JSON.stringify({alg:'RS256',typ:'JWT'}));
+  const claim = b64u(JSON.stringify({
+    iss: cfg.creds.client_email,
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now+3600, iat: now
+  }));
+  const msg = header+'.'+claim;
+  const pemKey = cfg.creds.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g,'');
+  const keyBuf = Uint8Array.from(atob(pemKey), c=>c.charCodeAt(0));
+  const key = await crypto.subtle.importKey('pkcs8', keyBuf, {name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'}, false, ['sign']);
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(msg));
+  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const jwt = msg+'.'+sigB64;
+  const resp = await fetch('https://oauth2.googleapis.com/token', {
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion='+jwt
+  });
+  const data = await resp.json();
+  if(!data.access_token) throw new Error(data.error_description||'Token inválido');
+  return data.access_token;
+}
+
+async function appendToSheets(lan) {
+  if(!cfg.creds||!cfg.sheetId) return false;
+  try {
+    const token = await getAccessToken();
+    const row = [[lan.mes+'/2026', lan.desc, CAT_LABEL[lan.cat]||lan.cat, lan.subcat||'', lan.tipo==='receita'?'Receita':'Gasto', lan.tipo==='gasto'?-lan.valor:lan.valor, lan.obs||'']];
+    const resp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/A1:G1:append?valueInputOption=USER_ENTERED`, {
+      method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({values: row})
+    });
+    return resp.ok;
+  } catch(e) { console.error(e); return false; }
+}
+
+async function syncFromSheets() {
+  if(!cfg.creds||!cfg.sheetId) { alert('Configure as credenciais na aba Config primeiro.'); return; }
+  const tag = document.getElementById('sync-tag');
+  tag.innerHTML='<span class="sync-tag"><span class="spinner"></span> Sincronizando...</span>';
+  try {
+    const token = await getAccessToken();
+    const resp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/A2:G`, {
+      headers:{'Authorization':'Bearer '+token}
+    });
+    const data = await resp.json();
+    const rows = data.values||[];
+    if(rows.length===0){ tag.innerHTML='<span class="sync-tag">Planilha vazia</span>'; setTimeout(()=>tag.innerHTML='',3000); return; }
+    lancamentos = rows.map((r,i)=>({
+      id:i+1, mes:(r[0]||'').replace('/2026',''),
+      desc:r[1]||'', cat:Object.keys(CAT_LABEL).find(k=>CAT_LABEL[k]===(r[2]||''))||'outro',
+      subcat:r[3]||'', tipo:(r[4]||'')==='Receita'?'receita':'gasto',
+      valor:Math.abs(parseFloat(r[5])||0), obs:r[6]||''
+    }));
+    nextId = lancamentos.length+1;
+    localStorage.setItem('ff_lancamentos', JSON.stringify(lancamentos));
+    tag.innerHTML='<span class="sync-tag" style="background:var(--green-bg);color:var(--green-text)"><i class="ti ti-check"></i> Sincronizado</span>';
+    setTimeout(()=>tag.innerHTML='',3000);
+    renderAll(); renderPlanilha();
+  } catch(e) {
+    tag.innerHTML='<span class="sync-tag" style="background:var(--red-bg);color:var(--red-text)">Erro ao sincronizar</span>';
+    setTimeout(()=>tag.innerHTML='',3000);
+  }
+}
+
+function saveLancamentosLocal() { localStorage.setItem('ff_lancamentos', JSON.stringify(lancamentos)); }
+
+function showSec(s) {
+  ['dashboard','lancamento','upload','planilha','config'].forEach(id=>{
+    document.getElementById('sec-'+id).classList.toggle('visible', id===s);
+  });
+  document.querySelectorAll('.nav-item').forEach((b,i)=>{
+    b.classList.toggle('active', ['dashboard','lancamento','upload','planilha','config'][i]===s);
+  });
+  if(s==='dashboard') renderAll();
+  if(s==='planilha') renderPlanilha();
+}
+
+function setTipo(t) {
+  tipoAtual = t;
+  document.getElementById('btn-rec').className='tipo-btn receita'+(t==='receita'?' active':'');
+  document.getElementById('btn-gas').className='tipo-btn gasto'+(t==='gasto'?' active':'');
+  document.getElementById('f-cat').value = t==='receita'?'receita':'pessoal';
+  updateSubcat();
+}
+
+function updateSubcat() {
+  const cat = document.getElementById('f-cat').value;
+  const sel = document.getElementById('f-subcat');
+  sel.innerHTML = (SUBCATS[cat]||['Outro']).map(s=>`<option>${s}</option>`).join('');
+}
+
+function buildMonthPills() {
+  const el = document.getElementById('month-pills');
+  const pills = ['Todos', ...MESES];
+  el.innerHTML = pills.map(m=>`<button class="month-pill${m===mesSel||(!mesSel&&m==='Todos')?' active':''}" onclick="setMes('${m}')">${m}</button>`).join('');
+}
+
+function setMes(m) {
+  mesSel = m==='Todos'?null:m;
+  buildMonthPills();
+  renderAll();
+}
+
+async function addLancamento() {
+  const desc = document.getElementById('f-desc').value.trim();
+  const valor = parseFloat(document.getElementById('f-valor').value);
+  const cat = document.getElementById('f-cat').value;
+  const subcat = document.getElementById('f-subcat').value;
+  const mes = document.getElementById('f-mes').value;
+  const obs = document.getElementById('f-obs').value;
+  if(!desc||!valor||valor<=0){ alert('Preencha a descrição e o valor.'); return; }
+  const lan = {id:nextId++, desc, valor, tipo:tipoAtual, cat, subcat, mes, obs};
+  lancamentos.push(lan);
+  saveLancamentosLocal();
+  const statusEl = document.getElementById('save-status');
+  if(cfg.creds) {
+    statusEl.innerHTML='<span class="sync-tag"><span class="spinner"></span> Salvando no Sheets...</span>';
+    const ok = await appendToSheets(lan);
+    statusEl.className = ok?'status-ok':'status-err';
+    statusEl.innerHTML = ok
+      ? '<i class="ti ti-check"></i> Salvo no Sheets!'
+      : '<i class="ti ti-alert-triangle"></i> Salvo local (Sheets falhou)';
+  } else {
+    statusEl.className='sync-tag';
+    statusEl.innerHTML='Salvo localmente';
+  }
+  setTimeout(()=>{ statusEl.innerHTML=''; statusEl.className=''; }, 3000);
+  document.getElementById('f-desc').value='';
+  document.getElementById('f-valor').value='';
+  document.getElementById('f-obs').value='';
+  showSec('dashboard');
+}
+
+function delLancamento(id) {
+  if(!confirm('Remover este lançamento?')) return;
+  lancamentos = lancamentos.filter(l=>l.id!==id);
+  saveLancamentosLocal();
+  renderPlanilha(); renderAll();
+}
+
+function getFiltered() {
+  return mesSel ? lancamentos.filter(l=>l.mes===mesSel) : lancamentos;
+}
+
+function renderMetrics(data) {
+  const rec = data.filter(l=>l.tipo==='receita').reduce((s,l)=>s+l.valor,0);
+  const gas = data.filter(l=>l.tipo==='gasto').reduce((s,l)=>s+l.valor,0);
+  const saldo = rec-gas;
+  const fmt = v=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('metrics').innerHTML=`
+    <div class="mc"><div class="mc-label">Receitas</div><div class="mc-val green">${fmt(rec)}</div></div>
+    <div class="mc"><div class="mc-label">Gastos</div><div class="mc-val red">${fmt(gas)}</div></div>
+    <div class="mc"><div class="mc-label">Saldo</div><div class="mc-val ${saldo>=0?'green':'red'}">${fmt(saldo)}</div></div>
+    <div class="mc"><div class="mc-label">Lançamentos</div><div class="mc-val blue">${data.length}</div></div>
+    <div class="mc"><div class="mc-label">Maior gasto</div><div class="mc-val amber">${data.filter(l=>l.tipo==='gasto').length?fmt(Math.max(...data.filter(l=>l.tipo==='gasto').map(l=>l.valor))):'R$ 0,00'}</div></div>
+  `;
+}
+
+function renderPizza(data) {
+  const gastos = data.filter(l=>l.tipo==='gasto');
+  const subMap = {};
+  gastos.forEach(l=>{ const k=l.subcat||CAT_LABEL[l.cat]||l.cat; subMap[k]=(subMap[k]||0)+l.valor; });
+  const entries = Object.entries(subMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const labels = entries.map(e=>e[0]);
+  const vals = entries.map(e=>e[1]);
+  const defs = ['#7F77DD','#378ADD','#EF9F27','#1D9E75','#E24B4A','#D4537E','#888780','#3B6D11'];
+  const colors = labels.map((l,i)=>SUBCAT_COLORS[l]||defs[i%defs.length]);
+  const total = vals.reduce((a,b)=>a+b,0);
+  document.getElementById('leg-pizza').innerHTML = labels.map((l,i)=>vals[i]>0?`<span><span class="ldot" style="background:${colors[i]}"></span>${l} ${total>0?Math.round(vals[i]/total*100):0}%</span>`:'').join('');
+  if(pizzaChart) pizzaChart.destroy();
+  pizzaChart = new Chart(document.getElementById('ch-pizza').getContext('2d'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:colors,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+  });
+}
+
+function renderBar() {
+  const meses = MESES;
+  const recs = meses.map(m=>lancamentos.filter(l=>l.tipo==='receita'&&l.mes===m).reduce((s,l)=>s+l.valor,0));
+  const gas = meses.map(m=>lancamentos.filter(l=>l.tipo==='gasto'&&l.mes===m).reduce((s,l)=>s+l.valor,0));
+  if(barChart) barChart.destroy();
+  barChart = new Chart(document.getElementById('ch-bar').getContext('2d'),{
+    type:'bar',
+    data:{labels:meses,datasets:[
+      {label:'Receita',data:recs,backgroundColor:'#1D9E75',borderRadius:4},
+      {label:'Gastos',data:gas,backgroundColor:'#E24B4A',borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false,color:'rgba(255,255,255,0.05)'},ticks:{color:'#666',font:{size:11}}},
+        y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#666',font:{size:11},callback:v=>'R$'+v}}
+      }
+    }
+  });
+}
+
+function renderAll() { buildMonthPills(); const d=getFiltered(); renderMetrics(d); renderPizza(d); renderBar(); }
+
+function renderPlanilha() {
+  const catF = document.getElementById('fil-cat').value;
+  const mesF = document.getElementById('fil-mes-plan').value;
+  let data = [...lancamentos];
+  if(catF) data=data.filter(l=>l.cat===catF);
+  if(mesF) data=data.filter(l=>l.mes===mesF);
+  data.sort((a,b)=>MESES.indexOf(b.mes)-MESES.indexOf(a.mes));
+  const tbody = document.getElementById('tb');
+  if(data.length===0){ tbody.innerHTML=''; document.getElementById('tb-empty').style.display='block'; return; }
+  document.getElementById('tb-empty').style.display='none';
+  const fmt=v=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  tbody.innerHTML=data.map(l=>`
+    <tr>
+      <td style="color:var(--text2)">${l.mes}/26</td>
+      <td>${l.desc}${l.obs?`<br><span style="font-size:11px;color:var(--text3)">${l.obs}</span>`:''}</td>
+      <td><span class="badge ${CAT_BADGE[l.cat]||'b-outro'}">${CAT_LABEL[l.cat]||l.cat}</span></td>
+      <td style="color:var(--text2);font-size:12px">${l.subcat||'—'}</td>
+      <td><span style="color:${l.tipo==='receita'?'var(--green-text)':'var(--red-text)'};font-size:12px">${l.tipo==='receita'?'↑ Receita':'↓ Gasto'}</span></td>
+      <td style="font-weight:700;color:${l.tipo==='receita'?'var(--green-text)':'var(--red-text)'}">${l.tipo==='gasto'?'-':''}${fmt(l.valor)}</td>
+      <td><button class="del-btn" onclick="delLancamento(${l.id})"><i class="ti ti-trash"></i></button></td>
+    </tr>`).join('');
+}
+
+async function processFile(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById('upload-status');
+  statusEl.innerHTML='<div class="loading-row"><div class="spinner"></div> Lendo fatura com IA — aguarde...</div>';
+  let base64='', mediaType=file.type||'image/jpeg';
+  try {
+    base64 = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=()=>rej(new Error('Erro')); r.readAsDataURL(file); });
+  } catch(e) { statusEl.innerHTML='<div class="status-err" style="margin-top:1rem">Erro ao ler o arquivo.</div>'; return; }
+  const subcatList = Object.values(SUBCATS).flat().join(', ');
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:1500,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+          {type:'text',text:`Analise esta fatura/extrato bancário e extraia TODOS os lançamentos individuais.
+Responda SOMENTE com JSON válido, sem markdown, sem texto extra.
+Formato exato: {"itens":[{"desc":"descrição curta do item","valor":00.00,"cat":"pessoal|ferramenta|cartao|outro","subcat":"subcategoria exata","tipo":"gasto|receita"}]}
+Subcategorias disponíveis: ${subcatList}
+Regras:
+- Escolha a subcat mais adequada da lista
+- valor: número positivo, sem símbolo de moeda
+- tipo: gasto para despesas/compras, receita para entradas/pagamentos recebidos
+- Se a imagem não for uma fatura legível, retorne: {"itens":[],"erro":"motivo"}`}
+        ]}]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.map(i=>i.text||'').join('')||'';
+    let parsed;
+    try { parsed=JSON.parse(text.replace(/```json|```/g,'').trim()); } catch(e){ throw new Error('Resposta inválida da IA'); }
+    if(parsed.erro) throw new Error(parsed.erro);
+    if(!parsed.itens||parsed.itens.length===0){ statusEl.innerHTML='<div style="padding:1rem;font-size:13px;color:var(--text2)">Nenhum lançamento identificado na imagem.</div>'; return; }
+    const fmt=v=>'R$ '+parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const itensJson = encodeURIComponent(JSON.stringify(parsed.itens));
+    statusEl.innerHTML=`
+      <div class="ai-result" style="margin-top:1.25rem">
+        <div class="ai-title"><i class="ti ti-sparkles"></i> ${parsed.itens.length} lançamentos identificados</div>
+        ${parsed.itens.map(item=>`
+          <div class="ai-item">
+            <span>${item.desc}</span>
+            <span style="display:flex;gap:8px;align-items:center">
+              <span class="ai-cat">${item.subcat||CAT_LABEL[item.cat]||item.cat}</span>
+              <span style="font-weight:700;color:${item.tipo==='gasto'?'var(--red-text)':'var(--green-text)'}">${item.tipo==='gasto'?'-':''}${fmt(item.valor)}</span>
+            </span>
+          </div>`).join('')}
+        <div style="margin-top:1.25rem;display:flex;gap:10px">
+          <button class="btn-p" onclick="importarAI('${itensJson}')"><i class="ti ti-check"></i> Importar todos</button>
+          <button class="btn-s" onclick="document.getElementById('upload-status').innerHTML=''"><i class="ti ti-x"></i> Cancelar</button>
+        </div>
+      </div>`;
+  } catch(e) { statusEl.innerHTML=`<div class="status-err" style="margin-top:1rem"><i class="ti ti-alert-triangle"></i> Erro: ${e.message}</div>`; }
+  event.target.value='';
+}
+
+async function importarAI(itensEncoded) {
+  let itens;
+  try { itens = JSON.parse(decodeURIComponent(itensEncoded)); } catch(e){ return; }
+  const mes = mesSel||'Mai';
+  const statusEl = document.getElementById('upload-status');
+  statusEl.innerHTML='<div class="loading-row"><div class="spinner"></div> Importando e salvando no Sheets...</div>';
+  for(const item of itens){
+    const lan={id:nextId++,desc:item.desc,valor:parseFloat(item.valor)||0,tipo:item.tipo||'gasto',cat:item.cat||'outro',subcat:item.subcat||'',mes,obs:'via IA'};
+    lancamentos.push(lan);
+    if(cfg.creds) await appendToSheets(lan);
+  }
+  saveLancamentosLocal();
+  statusEl.innerHTML='';
+  showSec('dashboard');
+}
+
+// Init
+loadConfig();
+updateSubcat();
+mesSel = 'Mai';
+renderAll();
+</script>
+</body>
+</html>
